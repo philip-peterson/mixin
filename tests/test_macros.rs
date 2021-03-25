@@ -22,6 +22,30 @@ fn test_base_case() {
 }
 
 #[test]
+fn test_2() {
+    trait Foo {}
+
+    struct Val {}
+    impl Foo for Val {}
+
+    trait Y {}
+
+    #[mixin::declare2]
+    pub struct Themeable<T>
+    where
+        T: Foo + ?Sized + 'static,
+    {
+        value: T,
+    }
+
+    #[mixin::insert2(Themeable<Val>)]
+    pub struct MyStruct {}
+
+    //let my_struct = MyStruct { value: 1 };
+    //format!("{:?}", my_struct.clone());
+}
+
+#[test]
 fn test_empty_vase() {
     #[mixin::declare]
     pub struct Themeable {}
