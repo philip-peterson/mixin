@@ -62,6 +62,10 @@ pub fn insert2(args: TokenStream, input: TokenStream) -> TokenStream {
 
 fn insert2_impl(args: MixinInsertArgs, input: TokenStream) -> Result<TokenStream, Error> {
     let mut stream = "()".parse().expect("Foo");
+
+    // Substitute any generic variables
+    // let declaration_tree = replace::replace_generics(declaration_tree);
+
     Ok(stream)
 }
 
@@ -142,13 +146,6 @@ struct Mixin2 {
     ident: String,
     extensions: Vec<String>,
     type_generics: Vec<String>,
-}
-
-impl Mixin2 {
-    //fn count_generics(&self) -> usize {
-    //    let declaration: DeriveInput = self.declaration.parse().unwrap();
-    //    declaration.generics.params.len()
-    //}
 }
 
 struct MixinTraitBound {
@@ -315,8 +312,6 @@ impl Parse for Mixin2 {
             }
         }
 
-        // TODO generic bounds
-
         Ok(Self {
             declaration,
             extensions: Vec::new(),
@@ -365,8 +360,16 @@ fn declare2_impl(input: TokenStream) -> Result<TokenStream, Error> {
     let code = input.clone().to_string();
     let mixin: Mixin2 = syn::parse(input.clone())?;
     let name = mixin.ident.to_string();
-    // let mut data = GLOBAL_DATA_2.lock().map_err(|_| Error::GlobalUnavailable)?;
-    // data.insert(name, Mutex::new(mixin));
+    let mut data = GLOBAL_DATA_2.lock().map_err(|_| Error::GlobalUnavailable)?;
+    data.insert(name, mixin);
+
+    // TODO
+    // let mut output2: TokenStream = "const _: fn() = || {
+    //     fn assert_impl_all<T: ?Sized $(+ $trait)+>() {}
+    //     assert_impl_all::<$type>();
+    // };".parse()?;
+    // output.extend(output2);
+
     // And give the empty output back
     Ok(output)
 }
@@ -409,19 +412,17 @@ fn expand2_impl(input: TokenStream) -> Result<TokenStream, Error> {
     let mut output: TokenStream = "#[allow(dead_code)]".parse()?;
     output.extend(input.clone().into_iter());
 
-    let actual_code: DeriveInput = syn::parse(input.clone()).unwrap();
-    replace::replace_generics(actual_code);
-    let code = input.to_string();
-    let ident = input.into_iter().skip(1).next();
-    let name;
-    match ident {
-        Some(TokenTree::Ident(ident)) => {
-            name = ident.to_string();
-        }
-        _ => {
-            return Err(Error::InvalidExpansion);
-        }
+    let mut declaration_tree: DeriveInput = syn::parse(input.clone())?;
+    let generics = &declaration_tree.generics;
+    if generics.params.len() > 0 || generics.where_clause.is_some() {
+        Err(syn::Error::new_spanned(
+            declaration_tree.generics,
+            "#[mixin::expand] blocks do not take generics"
+        ))?
     }
+
+    let code = input.to_string();
+    let name = declaration_tree.ident.to_string();
     let mut data = GLOBAL_DATA.lock().map_err(|_| Error::GlobalUnavailable)?;
     let mixin = data.get_mut(&name).ok_or_else(|| Error::NoMixin(name))?;
     mixin.extensions.push(code);

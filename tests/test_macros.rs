@@ -33,7 +33,7 @@ fn test_2() {
     #[mixin::declare2]
     pub struct Themeable<T>
     where
-        T: Foo + ?Sized + 'static,
+        T: Foo + ?Sized,
     {
         value: T,
     }

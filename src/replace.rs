@@ -22,7 +22,8 @@ impl VisitMut for StripAndReplaceGenerics {
     // }
 }
 
-pub(crate) fn replace_generics(code: DeriveInput) {
+pub(crate) fn replace_generics(code: DeriveInput) -> DeriveInput {
     let mut result = code.clone();
     StripAndReplaceGenerics.visit_derive_input_mut(&mut result);
+    result
 }
