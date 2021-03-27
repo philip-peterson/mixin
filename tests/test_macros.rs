@@ -3,6 +3,10 @@
 #[test]
 fn test_base_case() {
     #[mixin::declare]
+    pub struct Bs {
+    }
+
+    #[mixin::declare]
     pub struct Themeable {
         theme: bool,
     }
@@ -38,8 +42,8 @@ fn test_2() {
         value: T,
     }
 
-    #[mixin::insert2(Themeable<Val>)]
-    pub struct MyStruct {}
+    // #[mixin::insert2(Themeable<Val>)]
+    // pub struct MyStruct {}
 
     //let my_struct = MyStruct { value: 1 };
     //format!("{:?}", my_struct.clone());

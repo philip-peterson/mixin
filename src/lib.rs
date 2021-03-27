@@ -10,7 +10,7 @@ use syn::parse::{Parse, ParseStream};
 use syn::punctuated::Punctuated;
 use syn::{
     bracketed, parse_macro_input, AttributeArgs, Data, DeriveInput, Fields, GenericParam, ItemImpl,
-    Meta, NestedMeta, Token, TraitBoundModifier, Type, TypeParamBound, WherePredicate,
+    Meta, NestedMeta, Token, TraitBoundModifier, Type, TypeParamBound, WherePredicate, Path
 };
 use thiserror::Error;
 
@@ -42,12 +42,12 @@ impl Error {
 }
 
 struct MixinInsertArgs {
-    mixins: Vec<Type>,
+    mixins: Vec<Path>,
 }
 
 impl Parse for MixinInsertArgs {
     fn parse(input: ParseStream) -> syn::Result<Self> {
-        let types: Punctuated<Type, Token![,]> = input.parse_terminated(Type::parse)?;
+        let types: Punctuated<Path, Token![,]> = input.parse_terminated(Path::parse)?;
         Ok(Self {
             mixins: types.into_iter().collect(),
         })
@@ -61,11 +61,57 @@ pub fn insert2(args: TokenStream, input: TokenStream) -> TokenStream {
 }
 
 fn insert2_impl(args: MixinInsertArgs, input: TokenStream) -> Result<TokenStream, Error> {
-    let mut stream = "()".parse().expect("Foo");
-
     // Substitute any generic variables
     // let declaration_tree = replace::replace_generics(declaration_tree);
 
+    let mut the_struct: DeriveInput = syn::parse(input)?;
+    let the_struct_name = the_struct.ident.to_string();
+
+    // // Get names of mixins to append
+    // let mut mixin_names = HashSet::new();
+    // for nested_meta in args {
+    //     if let NestedMeta::Meta(meta) = nested_meta {
+    //         if let Meta::Path(path) = meta {
+    //             for path_segment in path.segments.iter() {
+    //                 mixin_names.insert(path_segment.ident.to_string());
+    //             }
+    //         }
+    //     }
+    // }
+
+    // let data = GLOBAL_DATA.lock().map_err(|_| Error::GlobalUnavailable)?;
+    // let mut mixed_fields = Vec::new();
+    // let mut mixed_impls = Vec::new();
+    // for mixin_name in mixin_names {
+    //     let mixin = data
+    //         .get(&mixin_name)
+    //         .ok_or_else(|| Error::NoMixin(mixin_name.clone()))?;
+    //     let input: TokenStream = mixin.declaration.parse()?;
+    //     let the_mixin: DeriveInput = syn::parse(input)?;
+    //     if let Data::Struct(st) = the_mixin.data {
+    //         if let Fields::Named(named) = st.fields {
+    //             mixed_fields.push(named.named);
+    //         }
+    //     }
+    //     for extension in &mixin.extensions {
+    //         let source = extension.replace(&mixin_name, &the_struct_name);
+    //         let stream: TokenStream = source.parse()?;
+    //         mixed_impls.push(stream);
+    //     }
+    // }
+
+    // if let Data::Struct(ref mut st) = the_struct.data {
+    //     if let Fields::Named(ref mut named) = st.fields {
+    //         for fields in mixed_fields {
+    //             named.named.extend(fields.into_pairs());
+    //         }
+    //     }
+    // }
+
+    let mut stream = TokenStream::from(the_struct.into_token_stream());
+    // for impls in mixed_impls {
+    //     stream.extend(impls);
+    // }
     Ok(stream)
 }
 
